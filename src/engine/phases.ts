@@ -184,7 +184,7 @@ async function shipPhase(d: ReleaseDeps, plan: Plan, p: Phase, files: string[], 
     log(plan, `Committed ${files.length} file(s)${deletions.length ? ` and ${deletions.length} deletion(s)` : ''} to ${story.name}`)
     savePlan(d.cfg.stateDir, plan)
   }
-  await promoteThroughPipeline(d, story, p, { confirmPhrase: opts.confirm, yes: opts.yes, untilEnv: opts.untilEnv, testClasses: testClassesIn(files) })
+  await promoteThroughPipeline(d, story, p, { confirmPhrase: opts.confirm, yes: opts.yes, untilEnv: opts.untilEnv, testClasses: testClassesIn(files), onProgress: () => savePlan(d.cfg.stateDir, plan) })
   finish(d.cfg, plan, p)
 }
 

@@ -74,7 +74,7 @@ const RULES: KindRule[] = [
   { test: ends('.dashboard-meta.xml'), kind: 'Dashboard', impact: 'warning' },
 ]
 
-const SKIP_DIRS = new Set(['.git', 'node_modules', '.sfdx', '.sf', '.sunset', 'dist'])
+const SKIP_DIRS = new Set(['.git', 'node_modules', '.sfdx', '.sf', '.sunset', 'dist', '.agentia', '.husky', '.vscode', '.idea', 'sunset-demo', 'coverage'])
 const TEXT_EXT = /\.(cls|trigger|xml|js|ts|html|cmp|app|evt|page|component|json|yaml|yml|md)$/i
 
 function walk(dir: string, out: string[] = []): string[] {

@@ -87,7 +87,7 @@ export function savePlan(stateDir: string, plan: Plan) {
 export function loadPlan(stateDir: string, id: string): Plan {
   const p = planPath(stateDir, id)
   if (!existsSync(p)) {
-    const matches = listPlans(stateDir).filter((x) => x.id.includes(id))
+    const matches = listPlans(stateDir).filter((x) => x.id.toLowerCase().includes(id.toLowerCase()))
     if (matches.length === 1) return matches[0]
     throw new Error(`Plan "${id}" not found in ${join(stateDir, 'plans')}${matches.length > 1 ? ' (ambiguous)' : ''}`)
   }

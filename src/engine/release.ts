@@ -92,7 +92,7 @@ export async function promoteThroughPipeline(
   d: ReleaseDeps,
   story: Pick<Story, 'id' | 'name'>,
   phaseState: Phase,
-  opts: { confirmPhrase?: string; yes?: boolean; untilEnv?: string; testClasses?: string[] },
+  opts: { confirmPhrase?: string; yes?: boolean; untilEnv?: string; testClasses?: string[]; onProgress?: () => void },
 ): Promise<void> {
   const { cfg, agentia } = d
   const envs = cfg.environments
@@ -126,8 +126,10 @@ export async function promoteThroughPipeline(
       throw new Error(`Promotion to ${env.name} failed: ${(err as Error).message.split('\n')[0]}${analysis ? `\nRelease agent: ${analysis}` : ''}`)
     }
     mark(phaseState, env.name, 'deployed')
+    opts.onProgress?.() // save immediately, so a later stop never re-submits this environment
     const verified = await verifyEnvironment(d, env.name, env.sfAlias, opts.testClasses ?? [])
     mark(phaseState, env.name, verified ? 'verified' : 'failed', verified ? 'smoke tests passed' : 'smoke tests failed')
+    opts.onProgress?.()
     if (!verified) throw new Error(`Verification failed in ${env.name}. Stopping. Consider: agentia sunset restore`)
     if (opts.untilEnv && opts.untilEnv.toLowerCase() === env.name.toLowerCase()) return
   }
