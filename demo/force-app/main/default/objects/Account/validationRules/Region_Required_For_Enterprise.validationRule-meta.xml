@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Region_Required_For_Enterprise</fullName>
+    <active>true</active>
+    <description>Enterprise accounts needed a legacy region (2021 territory project).</description>
+    <errorConditionFormula>AND(ISPICKVAL(Type, &quot;Enterprise&quot;), ISBLANK(Legacy_Region__c))</errorConditionFormula>
+    <errorMessage>Enterprise accounts need a Legacy Region.</errorMessage>
+</ValidationRule>

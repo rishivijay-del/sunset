@@ -1,0 +1,50 @@
+{
+  "name": "agentia-plugin-sunset",
+  "version": "0.1.0",
+  "description": "Safe, agent-powered retirement of Salesforce metadata for the Agentia CLI",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "files": [
+    "dist",
+    ".sunset.example.json",
+    "SKILL.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p .",
+    "test": "tsx test/run-all.ts",
+    "typecheck": "tsc -p . --noEmit",
+    "prepack": "npm run build"
+  },
+  "dependencies": {
+    "@oclif/core": "^4"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "tsx": "^4",
+    "typescript": "^5"
+  },
+  "oclif": {
+    "commands": "./dist/commands",
+    "topicSeparator": " ",
+    "topics": {
+      "sunset": {
+        "description": "Safely retire unused Salesforce metadata"
+      }
+    }
+  },
+  "keywords": [
+    "agentia",
+    "copado",
+    "salesforce",
+    "oclif",
+    "oclif-plugin",
+    "devops",
+    "hackathon"
+  ]
+}

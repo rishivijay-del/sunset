@@ -1,0 +1,6 @@
+await import('./referenceFinder.test.ts')
+await import('./xmlEditors.test.ts')
+await import('./logic.test.ts')
+await import('./capsule.test.ts')
+await import('./integration.test.ts')
+console.log('\nAll Sunset tests passed.')

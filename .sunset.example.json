@@ -1,0 +1,25 @@
+{
+  "repo": ".",
+  "packageDir": "force-app",
+  "pipelineId": "PASTE_YOUR_COPADO_PIPELINE_ID",
+  "copadoProjectId": "",
+  "apiVersion": "62.0",
+  "environments": [
+    { "name": "Dev1-SFP",       "sfAlias": "sunset-dev1", "branch": "dev1", "credentialId": "PASTE", "orgId": "PASTE" },
+    { "name": "INT-SFP",        "sfAlias": "sunset-int",  "branch": "int",  "credentialId": "PASTE", "orgId": "PASTE" },
+    { "name": "UAT-SFP",        "sfAlias": "sunset-uat",  "branch": "uat",  "credentialId": "PASTE", "orgId": "PASTE" },
+    { "name": "Production-SFP", "sfAlias": "sunset-prod", "branch": "main", "credentialId": "PASTE", "orgId": "PASTE", "isProduction": true }
+  ],
+  "crt": { "enabled": false, "projectId": "", "jobId": "" },
+  "commitMode": "cli",
+  "deletionPath": "auto",
+  "featureBranchPrefix": "feature/",
+  "gitRemote": "origin",
+  "quarantineDays": 14,
+  "usage": { "recentDays": 30, "cautionFillRatePct": 5, "staleDays": 365 },
+  "fieldLimit": 500,
+  "testLevelNonProd": "",
+  "testLevelProd": "",
+  "slackWebhookEnvVar": "SUNSET_SLACK_WEBHOOK",
+  "commands": {}
+}

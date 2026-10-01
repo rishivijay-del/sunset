@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <start><object>Account</object></start>
+    <recordUpdates>
+        <inputAssignments>
+            <field>Legacy_Region__c</field>
+            <value><stringValue>NA</stringValue></value>
+        </inputAssignments>
+    </recordUpdates>
+</Flow>
