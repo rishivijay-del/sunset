@@ -68,7 +68,8 @@ export async function commitToStory(
     const outcome = sf.validateSource(cfg.root, src.sfAlias, files, cfg.testLevelNonProd)
     if (!outcome.success) throw new Error(`Validation in ${src.name} failed:\n${outcome.failures.map((f) => ` - ${f.componentType} ${f.fullName}: ${f.problem}`).join('\n')}`)
     // Real deploy (validation passed)
-    const args = ['project', 'deploy', 'start', '-o', src.sfAlias, ...testLevelArgs(cfg.testLevelNonProd), '--wait', '60', '--json']
+    // --ignore-conflicts: scratch/source-tracked dev orgs otherwise refuse when the org changed since the last local sync
+    const args = ['project', 'deploy', 'start', '-o', src.sfAlias, ...testLevelArgs(cfg.testLevelNonProd), '--ignore-conflicts', '--wait', '60', '--json']
     for (const f of files) args.push('--source-dir', f)
     run('sf', args, { cwd: cfg.root, timeoutMs: 70 * 60_000 })
   }

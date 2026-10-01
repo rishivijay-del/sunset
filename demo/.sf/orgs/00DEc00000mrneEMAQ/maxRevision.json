@@ -1,0 +1,234 @@
+{
+    "fileVersion": 0,
+    "serverMaxRevisionCounter": 62,
+    "sourceMembers": {
+        "AppMenu__AppSwitcher": {
+            "memberType": "AppMenu",
+            "serverRevisionCounter": 19,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "ConnectedApp__Copado_DevOps_N_A": {
+            "memberType": "ConnectedApp",
+            "serverRevisionCounter": 21,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "Profile__Admin": {
+            "memberType": "Profile",
+            "serverRevisionCounter": 30,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "DigitalExperienceBundle__fragment_space/DefaultWidgetSpace": {
+            "memberType": "DigitalExperienceBundle",
+            "serverRevisionCounter": 24,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "DigitalExperience__fragment_space/DefaultWidgetSpace.sfdc_cms__languageSettings/languages": {
+            "memberType": "DigitalExperience",
+            "serverRevisionCounter": 26,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "ApexClass__SunsetCommitTest": {
+            "memberType": "ApexClass",
+            "serverRevisionCounter": 28,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "CustomField__Account.Account_Health_Old__c": {
+            "memberType": "CustomField",
+            "serverRevisionCounter": 31,
+            "lastRetrievedFromServer": 31,
+            "isNameObsolete": false
+        },
+        "CustomField__Account.Discount_Legacy__c": {
+            "memberType": "CustomField",
+            "serverRevisionCounter": 32,
+            "lastRetrievedFromServer": 32,
+            "isNameObsolete": false
+        },
+        "CustomField__Account.Fax_Backup__c": {
+            "memberType": "CustomField",
+            "serverRevisionCounter": 33,
+            "lastRetrievedFromServer": 33,
+            "isNameObsolete": false
+        },
+        "CustomField__Account.Legacy_Owner_Email__c": {
+            "memberType": "CustomField",
+            "serverRevisionCounter": 34,
+            "lastRetrievedFromServer": 34,
+            "isNameObsolete": false
+        },
+        "CustomField__Account.Legacy_Region__c": {
+            "memberType": "CustomField",
+            "serverRevisionCounter": 35,
+            "lastRetrievedFromServer": 35,
+            "isNameObsolete": false
+        },
+        "CustomField__Account.Legacy_Segment__c": {
+            "memberType": "CustomField",
+            "serverRevisionCounter": 36,
+            "lastRetrievedFromServer": 36,
+            "isNameObsolete": false
+        },
+        "CustomField__Account.Old_Channel__c": {
+            "memberType": "CustomField",
+            "serverRevisionCounter": 37,
+            "lastRetrievedFromServer": 37,
+            "isNameObsolete": false
+        },
+        "CustomField__Account.Old_Rating__c": {
+            "memberType": "CustomField",
+            "serverRevisionCounter": 38,
+            "lastRetrievedFromServer": 38,
+            "isNameObsolete": false
+        },
+        "CustomField__Account.Old_Territory_Code__c": {
+            "memberType": "CustomField",
+            "serverRevisionCounter": 39,
+            "lastRetrievedFromServer": 39,
+            "isNameObsolete": false
+        },
+        "CustomField__Account.Old_Tier__c": {
+            "memberType": "CustomField",
+            "serverRevisionCounter": 40,
+            "lastRetrievedFromServer": 40,
+            "isNameObsolete": false
+        },
+        "CustomField__Account.Partner_Tier_Old__c": {
+            "memberType": "CustomField",
+            "serverRevisionCounter": 41,
+            "lastRetrievedFromServer": 41,
+            "isNameObsolete": false
+        },
+        "CustomField__Account.Pilot_Program__c": {
+            "memberType": "CustomField",
+            "serverRevisionCounter": 42,
+            "lastRetrievedFromServer": 42,
+            "isNameObsolete": false
+        },
+        "CustomField__Account.Promo_Code_2019__c": {
+            "memberType": "CustomField",
+            "serverRevisionCounter": 43,
+            "lastRetrievedFromServer": 43,
+            "isNameObsolete": false
+        },
+        "CustomField__Account.Region_Label__c": {
+            "memberType": "CustomField",
+            "serverRevisionCounter": 44,
+            "lastRetrievedFromServer": 44,
+            "isNameObsolete": false
+        },
+        "CustomField__Account.Region_New__c": {
+            "memberType": "CustomField",
+            "serverRevisionCounter": 45,
+            "lastRetrievedFromServer": 45,
+            "isNameObsolete": false
+        },
+        "CustomField__Account.Region__c": {
+            "memberType": "CustomField",
+            "serverRevisionCounter": 46,
+            "lastRetrievedFromServer": 46,
+            "isNameObsolete": false
+        },
+        "CustomField__Account.Survey_Score_2020__c": {
+            "memberType": "CustomField",
+            "serverRevisionCounter": 47,
+            "lastRetrievedFromServer": 47,
+            "isNameObsolete": false
+        },
+        "CustomField__Account.Sync_Status__c": {
+            "memberType": "CustomField",
+            "serverRevisionCounter": 48,
+            "lastRetrievedFromServer": 48,
+            "isNameObsolete": false
+        },
+        "CustomField__Account.Temp_Import_Id__c": {
+            "memberType": "CustomField",
+            "serverRevisionCounter": 49,
+            "lastRetrievedFromServer": 49,
+            "isNameObsolete": false
+        },
+        "CustomField__Account.Trade_Show_Lead__c": {
+            "memberType": "CustomField",
+            "serverRevisionCounter": 50,
+            "lastRetrievedFromServer": 50,
+            "isNameObsolete": false
+        },
+        "ApexClass__TerritoryAssigner": {
+            "memberType": "ApexClass",
+            "serverRevisionCounter": 51,
+            "lastRetrievedFromServer": 51,
+            "isNameObsolete": false
+        },
+        "ApexClass__TerritoryAssignerTest": {
+            "memberType": "ApexClass",
+            "serverRevisionCounter": 52,
+            "lastRetrievedFromServer": 52,
+            "isNameObsolete": false
+        },
+        "LightningComponentBundle__regionBadge": {
+            "memberType": "LightningComponentBundle",
+            "serverRevisionCounter": 53,
+            "lastRetrievedFromServer": 53,
+            "isNameObsolete": false
+        },
+        "LightningComponentResource__regionBadge/regionBadge.js": {
+            "memberType": "LightningComponentResource",
+            "serverRevisionCounter": 54,
+            "lastRetrievedFromServer": 54,
+            "isNameObsolete": false
+        },
+        "LightningComponentResource__regionBadge/regionBadge.html": {
+            "memberType": "LightningComponentResource",
+            "serverRevisionCounter": 55,
+            "lastRetrievedFromServer": 55,
+            "isNameObsolete": false
+        },
+        "LightningComponentResource__regionBadge/regionBadge.js-meta.xml": {
+            "memberType": "LightningComponentResource",
+            "serverRevisionCounter": 56,
+            "lastRetrievedFromServer": 56,
+            "isNameObsolete": false
+        },
+        "ValidationRule__Account.Region_Required_For_Enterprise": {
+            "memberType": "ValidationRule",
+            "serverRevisionCounter": 57,
+            "lastRetrievedFromServer": 57,
+            "isNameObsolete": false
+        },
+        "ListView__Account.By_Region": {
+            "memberType": "ListView",
+            "serverRevisionCounter": 58,
+            "lastRetrievedFromServer": 58,
+            "isNameObsolete": false
+        },
+        "Report__unfiled$public/Accounts_By_Legacy_Region": {
+            "memberType": "Report",
+            "serverRevisionCounter": 59,
+            "lastRetrievedFromServer": 59,
+            "isNameObsolete": false
+        },
+        "Layout__Account-Sunset Demo Layout": {
+            "memberType": "Layout",
+            "serverRevisionCounter": 60,
+            "lastRetrievedFromServer": 60,
+            "isNameObsolete": false
+        },
+        "Flow__Account_Region_Sync": {
+            "memberType": "Flow",
+            "serverRevisionCounter": 61,
+            "lastRetrievedFromServer": 61,
+            "isNameObsolete": false
+        },
+        "PermissionSet__Sunset_Demo_Access": {
+            "memberType": "PermissionSet",
+            "serverRevisionCounter": 62,
+            "lastRetrievedFromServer": 62,
+            "isNameObsolete": false
+        }
+    }
+}
