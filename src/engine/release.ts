@@ -112,10 +112,8 @@ export async function promoteThroughPipeline(
     }
 
     try {
-      console.log(`${icon.arrow} Promoting ${story.name} to ${env.name} (merge and deploy)...`)
-      const result = agentia.promoteStory(story.id || story.name)
-      const status = String(pick(result, ['status', 'state', 'result', 'promotionStatus']) ?? '')
-      if (/fail|error|cancel/i.test(status)) throw new Error(status)
+      console.log(`${icon.arrow} Submitting ${story.name} to ${env.name} (Copado creates the promotion, merges and deploys)...`)
+      await submitAndWait(d, story, env.name)
     } catch (err) {
       mark(phaseState, env.name, 'failed', (err as Error).message.slice(0, 200))
       let analysis = ''
@@ -124,7 +122,6 @@ export async function promoteThroughPipeline(
       } catch {
         /* optional */
       }
-      savePlanHint(phaseState)
       throw new Error(`Promotion to ${env.name} failed: ${(err as Error).message.split('\n')[0]}${analysis ? `\nRelease agent: ${analysis}` : ''}`)
     }
     mark(phaseState, env.name, 'deployed')
@@ -133,6 +130,43 @@ export async function promoteThroughPipeline(
     if (!verified) throw new Error(`Verification failed in ${env.name}. Stopping. Consider: agentia sunset restore`)
     if (opts.untilEnv && opts.untilEnv.toLowerCase() === env.name.toLowerCase()) return
   }
+}
+
+/**
+ * One pipeline hop, exactly as verified on the Playground:
+ *   agentia cicd work set <story>; agentia cicd work submit --done
+ * then poll the story's promotions until the one into `envName` has completed its deployment.
+ * `work set` needs a clean tracked tree and checks out feature/<story>, so Sunset stashes local
+ * edits (already committed to the story by Copado) and returns to the original branch afterwards.
+ */
+export async function submitAndWait(d: ReleaseDeps, story: Pick<Story, 'id' | 'name'>, envName: string, timeoutMinutes = 45, pollMs = 20_000): Promise<void> {
+  const { agentia, git } = d
+  const startBranch = git.currentBranch()
+  const stashed = git.hasTrackedChanges() ? git.stashPush('sunset-autostash before work submit') : false
+  try {
+    agentia.setActiveStory(story.name || story.id)
+    agentia.submitDone()
+  } finally {
+    try {
+      git.checkout(startBranch)
+    } catch {
+      /* stay where we are */
+    }
+    if (stashed && !git.stashPop()) console.log(color.yellow(`${icon.warn} Could not re-apply your local edits automatically. Run: git stash pop`))
+  }
+  const deadline = Date.now() + timeoutMinutes * 60_000
+  let last = ''
+  while (Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, pollMs))
+    const p = agentia.storyPromotions(story.id || story.name).find((x) => x.to.toLowerCase() === envName.toLowerCase())
+    if (!p) continue
+    const state = `${p.name} ${p.status} (merge: ${p.promotionStatus || '-'}, deploy: ${p.deployStatus || '-'})`
+    if (state !== last) console.log(color.dim(`   ${state}`))
+    last = state
+    if (/fail|error|conflict|cancel/i.test(`${p.status} ${p.promotionStatus} ${p.deployStatus}`)) throw new Error(`${p.name} to ${envName}: ${state}`)
+    if (/complete/i.test(p.status) && (!p.deployStatus || /success/i.test(p.deployStatus))) return
+  }
+  throw new Error(`Timed out after ${timeoutMinutes} minutes waiting for the promotion to ${envName} (last: ${last || 'no promotion found'})`)
 }
 
 function savePlanHint(_p: Phase) {

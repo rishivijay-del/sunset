@@ -116,6 +116,19 @@ export class Git {
       })
   }
 
+  /** True if tracked files have uncommitted changes (Agentia `work set` needs them clean). */
+  hasTrackedChanges(): boolean {
+    return this.git(['diff', '--quiet'], true).code !== 0 || this.git(['diff', '--cached', '--quiet'], true).code !== 0
+  }
+
+  stashPush(message: string): boolean {
+    return this.git(['stash', 'push', '-m', message], true).code === 0
+  }
+
+  stashPop(): boolean {
+    return this.git(['stash', 'pop'], true).code === 0
+  }
+
   checkoutNew(branch: string, from: string) {
     this.git(['checkout', '-B', branch, from])
   }

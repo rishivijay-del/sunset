@@ -54,7 +54,12 @@ export const DEFAULT_COMMANDS: Record<string, string[]> = {
   workUpdate: ['cicd', 'work', 'update', '{story}', '--status', '{status}', '--json'],
   // Body on stdin: {"message": "...", "changes": [{"a": "Add|Delete", "c": "SFDX", "n": "<name>", "t": "<type>"}]}
   commitCreate: ['cicd', 'work', 'commit', '{story}', '--cloud', '--stdin', '--wait', '--json'],
-  // Promotes the story to the next environment and deploys
+  // Moving a story to the next environment (verified live on a Playground pipeline):
+  //   work set <story>  → makes it the active work item (needs a clean tracked working tree)
+  //   work submit --done → creates the promotion to the next environment, merges AND deploys
+  // Sunset then polls the story's promotions until the one for that environment completes.
+  workSet: ['cicd', 'work', 'set', '{story}', '--json'],
+  workSubmitDone: ['cicd', 'work', 'submit', '--done', '--skip-local-tests', '--skip-pull-request', '--json'],
   workPromote: ['cicd', 'work', 'promote', '{story}', '--cloud', '--deploy', '--wait', '--json'],
   promotionList: ['cicd', 'promotion', 'list', '--work-id', '{story}', '--json'],
   promotionRun: ['cicd', 'promotion', 'run', '{promotionId}', '--operation', 'merge_and_deploy', '--wait', '--json'],

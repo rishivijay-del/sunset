@@ -96,9 +96,34 @@ export class Agentia {
     return this.cmd('commitCreate', { story: this.resolveStoryId(story), message }, { input: body, timeoutMs: 45 * 60_000 }).data
   }
 
-  /** Promote the story to its next environment (merge and deploy), waiting for the result. */
+  /** Promote the story to its next environment (used only if submit is unavailable). */
   promoteStory(story: string): any {
     return resultOf(this.cmd('workPromote', { story: this.resolveStoryId(story) }, { timeoutMs: 90 * 60_000 }).data)
+  }
+
+  /** Make the story the active work item (checks out feature/<story> locally). */
+  setActiveStory(story: string) {
+    return this.cmd('workSet', { story }, { timeoutMs: 10 * 60_000 }).data
+  }
+
+  /** Copado UI "Submit" (promote): creates the next promotion, merges and deploys. Returns immediately. */
+  submitDone() {
+    return this.cmd('workSubmitDone', {}, { timeoutMs: 20 * 60_000 }).data
+  }
+
+  /** The story's promotions, newest first, normalised. */
+  storyPromotions(story: string): { id: string; name: string; status: string; from: string; to: string; promotionStatus: string; deployStatus: string }[] {
+    return rowsOf(this.cmd('promotionList', { story: this.resolveStoryId(story) }).data)
+      .map((p: any) => ({
+        id: String(pick(p, ['id', 'Id']) ?? ''),
+        name: String(pick(p, ['name', 'Name']) ?? ''),
+        status: String(pick(p, ['status', 'Status']) ?? ''),
+        from: String(pick(p, ['sourceEnvironmentName']) ?? ''),
+        to: String(pick(p, ['destinationEnvironmentName']) ?? ''),
+        promotionStatus: String(pick(p, ['lastPromotionExecutionStatus']) ?? ''),
+        deployStatus: String(pick(p, ['lastDeploymentExecutionStatus']) ?? ''),
+      }))
+      .sort((x, y) => y.name.localeCompare(x.name))
   }
 
   promotions(story: string): any[] {
