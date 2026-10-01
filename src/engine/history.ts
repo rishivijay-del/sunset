@@ -21,10 +21,9 @@ export function investigateOrigin(git: Git, agentia: Agentia | undefined, fieldF
   const commits = [...all.values()].sort((a, b) => a.date.localeCompare(b.date))
   const createdIn = fileCommits[fileCommits.length - 1] ?? commits[0]
 
-  // Story IDs from commit messages and from the branches that contain the commits (Copado: feature/US-xxxxxxx)
-  const texts = commits.map((c) => c.subject)
-  for (const c of commits.slice(0, 15)) texts.push(...git.branchesContaining(c.sha))
-  const ids = storyIdsFrom(texts)
+  // Story IDs only from the commits that actually touched the field or its references.
+  // (Branches merely *containing* a commit are not evidence: every later feature branch contains the baseline.)
+  const ids = storyIdsFrom(commits.map((c) => c.subject))
 
   const stories: Origin['stories'] = []
   for (const id of ids.slice(0, 10)) {
@@ -51,10 +50,10 @@ export function investigateOrigin(git: Git, agentia: Agentia | undefined, fieldF
     try {
       aiSummary = agentia.ask(
         'operate',
-        `In two short sentences for a Salesforce developer, explain why the field ${fieldName} probably exists and whether the work it supported still looks active. ` +
+        `In two short plain-text sentences (no markdown) for a Salesforce developer, explain why the field ${fieldName} probably exists and whether the work it supported still looks active. Use only the evidence below; if it is thin, say so instead of guessing. ` +
           `Commits: ${JSON.stringify(commits.slice(-12).map((c) => ({ date: c.date, author: c.author, subject: c.subject })))} ` +
           `Stories: ${JSON.stringify(stories)}`,
-      ).trim()
+      ).replace(/\*\*|__|`/g, '').trim()
     } catch (err) {
       notes.push(`Operate agent summary unavailable: ${(err as Error).message.split('\n')[0]}`)
     }

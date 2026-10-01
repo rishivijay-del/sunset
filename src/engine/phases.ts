@@ -30,7 +30,7 @@ import {
 } from './capsule.js'
 import type { Investigation } from './investigator.js'
 import { askOracle } from './oracle.js'
-import { inactiveFlowVersions } from './orgReferences.js'
+import { inactiveFlowVersions, inactiveFlowVersionsByIds } from './orgReferences.js'
 import { proposeAndApply } from './patcher.js'
 import { commitToStory, promoteThroughPipeline, type ReleaseDeps } from './release.js'
 import { detachEditorFor, isPermissionFile, removeFieldPermission, removeFromReport, setFieldPermission } from './xmlEditors.js'
@@ -430,7 +430,14 @@ export async function runRetire(d: ReleaseDeps, plan: Plan, opts: RunOptions & {
       const others = o.blockers.filter((b) => !/flow/i.test(b.type))
       if (others.length) throw new Error(`${env.name} still has blockers for ${t.qualified}: ${others.map((b) => `${b.type} ${b.name}`).join(', ')}. Run detach again.`)
       if (flowBlockers.length) {
-        const versions = inactiveFlowVersions(sf, env.sfAlias, [...new Set(flowBlockers.map((b) => b.name.split('.')[0].replace(/-\d+$/, '')))])
+        const ids = flowBlockers.map((b) => b.name).filter((n) => /^301[A-Za-z0-9]{12,15}$/.test(n))
+        const names = flowBlockers.map((b) => b.name).filter((n) => !/^301[A-Za-z0-9]{12,15}$/.test(n))
+        const versions = [
+          ...inactiveFlowVersionsByIds(sf, env.sfAlias, ids),
+          ...inactiveFlowVersions(sf, env.sfAlias, [...new Set(names.map((n) => n.split('.')[0].replace(/-\d+$/, '')))]),
+        ]
+        const activeLeft = ids.length > versions.filter((v) => ids.includes(v.id)).length
+        if (activeLeft) throw new Error(`${env.name}: the ACTIVE version of a flow still references ${t.field}. Run detach again so the flow is fixed first.`)
         console.log(color.yellow(`${icon.warn} ${env.name}: ${versions.length} obsolete Flow version(s) still reference ${t.field}: ${versions.map((v) => `${v.flow} v${v.version}`).join(', ')}`))
         if (!opts.purgeFlowVersions) throw new Error('Re-run with --purge-flow-versions to delete those obsolete (inactive) versions.')
         if (env.isProduction) await typedConfirm(`PURGE FLOW VERSIONS IN ${env.name}`, opts.confirm)

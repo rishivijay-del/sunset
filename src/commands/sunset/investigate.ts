@@ -72,6 +72,7 @@ export default class Investigate extends SunsetCommand {
       for (const c of inv.collisions) this.log(`  ${c.story} "${c.title}"${c.owner ? ` (${c.owner})` : ''}: ${c.hits.length} reference(s) in ${c.branch}`)
     }
     for (const n of inv.notes) this.log(color.dim(`note: ${n}`))
-    this.log(`\nNext: ${color.cyan(`agentia sunset plan ${inv.target.qualified}`)}`)
+    if (v === 'BLOCKED') this.log(`\n${color.red(`${icon.stop} Do not retire this field: someone is still using it.`)} Find the writer above (integration, automation or users) and stop that use first.`)
+    else this.log(`\nNext: ${color.cyan(`agentia sunset plan ${inv.target.qualified}`)}`)
   }
 }

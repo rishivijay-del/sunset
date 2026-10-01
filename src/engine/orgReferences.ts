@@ -78,6 +78,14 @@ export function inactiveFlowVersions(sf: Salesforce, alias: string, flowApiNames
   return r.records.map((x: any) => ({ id: x.Id, flow: x.Definition?.DeveloperName, version: x.VersionNumber, status: x.Status }))
 }
 
+/** Salesforce's delete validation names flow versions by record Id (301...). Return only those that are not active. */
+export function inactiveFlowVersionsByIds(sf: Salesforce, alias: string, ids: string[]): { id: string; flow: string; version: number; status: string }[] {
+  if (!ids.length) return []
+  const list = ids.map((n) => `'${n}'`).join(',')
+  const r = sf.query(alias, `SELECT Id, VersionNumber, Status, Definition.DeveloperName FROM Flow WHERE Id IN (${list}) AND Status != 'Active'`, true)
+  return r.records.map((x: any) => ({ id: x.Id, flow: x.Definition?.DeveloperName, version: x.VersionNumber, status: x.Status }))
+}
+
 export function mergeOrgReferences(...lists: OrgReference[][]): OrgReference[] {
   const seen = new Map<string, OrgReference>()
   for (const list of lists) for (const r of list) {
