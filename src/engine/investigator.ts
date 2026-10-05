@@ -3,6 +3,8 @@
  * Each layer degrades gracefully: if the org or Copado is unreachable, the
  * repo layer still works and the notes explain what was skipped.
  */
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { Agentia } from '../adapters/agentia.js'
 import { Git } from '../adapters/git.js'
 import { Salesforce } from '../adapters/salesforce.js'
@@ -84,7 +86,16 @@ export function investigate(cfg: LoadedConfig, qualified: string, opts: Investig
   }
 
   if (!opts.skipHistory && git.isRepo()) {
-    origin = investigateOrigin(git, opts.offline ? undefined : agentia, fieldFile, field, cfg.packageDir, notes)
+    let fieldInfo: { label?: string; description?: string } | undefined
+    if (fieldFile) {
+      try {
+        const xml = readFileSync(join(cfg.root, fieldFile), 'utf8')
+        fieldInfo = { label: /<label>([^<]*)<\/label>/.exec(xml)?.[1], description: /<description>([^<]*)<\/description>/.exec(xml)?.[1] }
+      } catch {
+        /* optional */
+      }
+    }
+    origin = investigateOrigin(git, opts.offline ? undefined : agentia, fieldFile, field, cfg.packageDir, notes, fieldInfo)
   }
 
   if (!opts.offline && !opts.skipCollisions && git.isRepo()) {

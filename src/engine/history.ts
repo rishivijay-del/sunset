@@ -13,7 +13,7 @@ export interface Origin {
   aiSummary?: string
 }
 
-export function investigateOrigin(git: Git, agentia: Agentia | undefined, fieldFile: string | undefined, fieldName: string, packageDir: string, notes: string[]): Origin {
+export function investigateOrigin(git: Git, agentia: Agentia | undefined, fieldFile: string | undefined, fieldName: string, packageDir: string, notes: string[], fieldInfo?: { label?: string; description?: string }): Origin {
   const fileCommits = fieldFile ? git.fileHistory(fieldFile) : []
   const refCommits = git.stringHistory(fieldName, packageDir)
   const all = new Map<string, CommitInfo>()
@@ -50,10 +50,13 @@ export function investigateOrigin(git: Git, agentia: Agentia | undefined, fieldF
     try {
       aiSummary = agentia.ask(
         'operate',
-        `In two short plain-text sentences (no markdown) for a Salesforce developer, explain why the field ${fieldName} probably exists and whether the work it supported still looks active. Use only the evidence below; if it is thin, say so instead of guessing. ` +
+        `In two short plain-text sentences (no markdown) for a Salesforce developer, explain why the field ${fieldName} probably exists and whether the work it supported still looks active. ` +
+          `Base the purpose mainly on the field's own label and description. Commits that only load or reset metadata (messages like "baseline", "initial", "reset", "deploy all") say nothing about purpose; ignore their wording. ` +
+          `Use only the evidence below; if it is thin, say so briefly. ` +
+          `Field: ${JSON.stringify(fieldInfo ?? {})} ` +
           `Commits: ${JSON.stringify(commits.slice(-12).map((c) => ({ date: c.date, author: c.author, subject: c.subject })))} ` +
           `Stories: ${JSON.stringify(stories)}`,
-      ).replace(/\*\*|__|`/g, '').trim()
+      ).replace(/\*\*|`/g, '').trim()
     } catch (err) {
       notes.push(`Operate agent summary unavailable: ${(err as Error).message.split('\n')[0]}`)
     }
