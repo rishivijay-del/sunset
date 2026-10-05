@@ -437,7 +437,9 @@ export async function runRetire(d: ReleaseDeps, plan: Plan, opts: RunOptions & {
           ...inactiveFlowVersionsByIds(sf, env.sfAlias, ids),
           ...inactiveFlowVersions(sf, env.sfAlias, [...new Set(names.map((n) => n.split('.')[0].replace(/-\d+$/, '')))]),
         ]
-        const activeLeft = ids.length > versions.filter((v) => ids.includes(v.id)).length
+        // Salesforce's error text gives 15-character Ids; queries return 18-character Ids. Compare on the first 15.
+        const id15 = (x: string) => x.slice(0, 15)
+        const activeLeft = ids.some((i) => !versions.some((v) => id15(v.id) === id15(i)))
         if (activeLeft) throw new Error(`${env.name}: the ACTIVE version of a flow still references ${t.field}. Run detach again so the flow is fixed first.`)
         console.log(color.yellow(`${icon.warn} ${env.name}: ${versions.length} obsolete Flow version(s) still reference ${t.field}: ${versions.map((v) => `${v.flow} v${v.version}`).join(', ')}`))
         if (!opts.purgeFlowVersions) throw new Error('Re-run with --purge-flow-versions to delete those obsolete (inactive) versions.')
