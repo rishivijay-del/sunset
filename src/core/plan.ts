@@ -47,7 +47,7 @@ export interface Plan {
   mergeInto?: string // for merge plans: Object.Field__c that survives
   phases: Phase[]
   capsules: Record<string, string> // qualified field -> capsule id
-  quarantine?: { startedAt: string; endsAt: string; signals: QuarantineSignal[] }
+  quarantine?: { startedAt: string; endsAt: string; signals: QuarantineSignal[]; watchFrom?: string } // watchFrom: only look for use after this moment (set by --clear)
   deletionPath?: 'A' | 'B' | 'C'
   history: { at: string; event: string }[]
 }

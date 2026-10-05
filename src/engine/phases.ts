@@ -332,11 +332,12 @@ export async function watchQuarantine(d: ReleaseDeps, plan: Plan, opts: { signal
   if (opts.clear) {
     log(plan, `Cleared ${q.signals.length} quarantine signal(s)`)
     q.signals = []
+    q.watchFrom = new Date().toISOString() // resolved: from now on only new use counts
   }
   if (opts.signal) q.signals.push({ at: new Date().toISOString(), kind: 'manual', detail: opts.signal })
 
   const prod = prodEnv(cfg)
-  const since = q.startedAt.slice(0, 19) + 'Z'
+  const since = (q.watchFrom ?? q.startedAt).slice(0, 19) + 'Z'
   const newSignals: string[] = []
   for (const t of plan.targets) {
     try {
