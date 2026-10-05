@@ -525,7 +525,19 @@ export async function runRetire(d: ReleaseDeps, plan: Plan, opts: RunOptions & {
     }
     p.changedFiles = [...changed]
     await shipPhase(d, plan, p, p.changedFiles.filter((f) => existsSync(join(cfg.root, f)) || path === 'B'), message, opts, path === 'A' ? deletions : [])
-    if (path === 'A') removeFieldFiles()
+    if (path === 'A') {
+      removeFieldFiles()
+      // Copado's promotions delete the field in every DESTINATION org; the development (source) org keeps it.
+      // Verified on the Playground: INT/UAT/Production deleted, Dev1 not. Delete it there too, with approval.
+      const src = sourceEnv(cfg)
+      if (p.status === 'done' && (await confirm(`Also delete ${deletions.map((x) => x.name).join(', ')} in the development org ${src.name}?`, { yes: opts.yes }))) {
+        const res = sf.deployDestructive(src.sfAlias, deletions, cfg.apiVersion, cfg.testLevelNonProd)
+        if (res.success) console.log(color.green(`${icon.ok} Deleted in ${src.name}`))
+        else if (res.failures.some((f) => /not found|does not exist|no such/i.test(f.problem))) console.log(color.dim(`${src.name}: already deleted.`))
+        else p.manualTasks.push(`Delete ${deletions.map((x) => x.name).join(', ')} in ${src.name}: ${res.failures.map((f) => f.problem).join('; ')}`)
+        savePlan(cfg.stateDir, plan)
+      }
+    }
   }
 
   if (p.status === 'done') {
