@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Zone_Required_For_Enterprise</fullName>
+    <active>true</active>
+    <description>Enterprise accounts needed a market zone (2022 expansion project).</description>
+    <errorConditionFormula>AND(ISPICKVAL(Type, &quot;Enterprise&quot;), ISBLANK(Market_Zone__c))</errorConditionFormula>
+    <errorMessage>Enterprise accounts need a Market Zone.</errorMessage>
+</ValidationRule>

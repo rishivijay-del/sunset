@@ -1,0 +1,10 @@
+{
+  "packageDirectories": [
+    {
+      "path": "force-app",
+      "default": true
+    }
+  ],
+  "name": "sunset-demo2",
+  "sourceApiVersion": "62.0"
+}
