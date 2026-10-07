@@ -10,6 +10,7 @@ import type { Agentia, Story } from '../adapters/agentia.js'
 import { prodEnv, sourceEnv, type LoadedConfig } from '../core/config.js'
 import { canStart, log, newPhase, phase, savePlan, type Phase, type PhaseName, type Plan, type Target } from '../core/plan.js'
 import { findFieldFile, scanRepo, type Reference } from '../core/referenceFinder.js'
+import { run } from '../core/runner.js'
 import { csvObjects, toCsv } from '../util/csv.js'
 import { ApprovalError, color, confirm, ensureDir, icon, notifySlack, shortId, slug, typedConfirm, writeJson } from '../util/index.js'
 import {
@@ -170,7 +171,7 @@ function finish(cfg: LoadedConfig, plan: Plan, p: Phase) {
   savePlan(cfg.stateDir, plan)
 }
 
-async function shipPhase(d: ReleaseDeps, plan: Plan, p: Phase, files: string[], message: string, opts: RunOptions, deletions: { type: string; name: string }[] = []) {
+async function shipPhase(d: ReleaseDeps, plan: Plan, p: Phase, files: string[], message: string, opts: RunOptions, deletions: { type: string; name: string }[] = [], extraMembers: { type: string; name: string }[] = []) {
   if (opts.noCommit) {
     console.log(color.yellow(`--no-commit: ${files.length} file(s) changed locally only. Review with git diff.`))
     savePlan(d.cfg.stateDir, plan)
@@ -185,7 +186,7 @@ async function shipPhase(d: ReleaseDeps, plan: Plan, p: Phase, files: string[], 
     srcProgress.status = 'pending'
   }
   if (srcProgress?.status === 'pending') {
-    const result = await commitToStory(d, story, message, files, deletions)
+    const result = await commitToStory(d, story, message, files, deletions, extraMembers)
     console.log(`${icon.ok} ${result}`)
     log(plan, `Committed ${files.length} file(s)${deletions.length ? ` and ${deletions.length} deletion(s)` : ''} to ${story.name}`)
     savePlan(d.cfg.stateDir, plan)
@@ -324,7 +325,11 @@ export async function runQuarantine(d: ReleaseDeps, plan: Plan, opts: RunOptions
   }
   p.changedFiles = [...changed]
   console.log(`${icon.ok} Field-level security set to hidden in ${p.changedFiles.length} permission set/profile file(s).`)
-  await shipPhase(d, plan, p, p.changedFiles, `Sunset: quarantine ${plan.targets.map((t) => t.qualified).join(', ')}`, opts)
+  // Committing the field together with the permission sets makes Salesforce return the field's (switched-off)
+  // permission when Copado retrieves, so Copado records the change. Verified on the Playground.
+  const fieldMembers = plan.targets.map((t) => ({ type: 'CustomField', name: t.qualified }))
+  await shipPhase(d, plan, p, p.changedFiles, `Sunset: quarantine ${plan.targets.map((t) => t.qualified).join(', ')}`, opts, [], fieldMembers)
+  if (p.status === 'done' || p.environments.some((e) => e.status !== 'pending')) enforceHidden(d, plan, p)
   if (p.status === 'done' && !plan.quarantine) {
     const start = new Date()
     const end = new Date(start.getTime() + cfg.quarantineDays * 86_400_000)
@@ -333,6 +338,40 @@ export async function runQuarantine(d: ReleaseDeps, plan: Plan, opts: RunOptions
     savePlan(cfg.stateDir, plan)
     console.log(color.green(`${icon.ok} Quarantine running until ${end.toISOString().slice(0, 10)}. Check with: agentia sunset watch ${plan.id}`))
   }
+}
+
+/**
+ * Ask every org directly whether any permission set or profile still grants read access, and if so apply
+ * the explicit "no access" files there. A promoted permission set that merely omits the field may not revoke
+ * access, so Sunset checks the org instead of trusting the deployment.
+ */
+export function enforceHidden(d: ReleaseDeps, plan: Plan, p: Phase) {
+  const { cfg, sf } = d
+  const files = p.changedFiles.filter((f) => existsSync(join(cfg.root, f)))
+  for (const env of cfg.environments) {
+    for (const t of plan.targets) {
+      let grants: string[] = []
+      try {
+        const r = sf.query(env.sfAlias, `SELECT Parent.Name, Parent.Profile.Name FROM FieldPermissions WHERE Field = '${t.qualified}' AND PermissionsRead = true`)
+        grants = r.records.map((x: any) => x.Parent?.Profile?.Name ? `profile ${x.Parent.Profile.Name}` : `permission set ${x.Parent?.Name}`)
+      } catch (err) {
+        console.log(color.dim(`${env.name}: could not check field access (${(err as Error).message.split('\n')[0]})`))
+        continue
+      }
+      if (!grants.length) {
+        console.log(color.green(`${icon.ok} ${env.name}: nobody can see ${t.qualified}`))
+        continue
+      }
+      console.log(color.yellow(`${icon.warn} ${env.name}: still visible via ${grants.join(', ')}; applying explicit no-access`))
+      const args = ['project', 'deploy', 'start', '-o', env.sfAlias, '--ignore-conflicts', '--wait', '30', '--json']
+      for (const f of files) args.push('--source-dir', f)
+      const res = run('sf', args, { cwd: cfg.root, allowFail: true })
+      const after = sf.query(env.sfAlias, `SELECT Parent.Name FROM FieldPermissions WHERE Field = '${t.qualified}' AND PermissionsRead = true`).records.length
+      if (res.code === 0 && after === 0) console.log(color.green(`${icon.ok} ${env.name}: hidden (enforced)`))
+      else p.manualTasks.push(`${env.name}: ${t.qualified} still readable via ${grants.join(', ')}; hide it in Setup or add those permission sets to the repo.`)
+    }
+  }
+  savePlan(cfg.stateDir, plan)
 }
 
 /** Watch for anyone who still needs the field. Pure-ish: queries + signal recording. */

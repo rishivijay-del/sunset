@@ -38,7 +38,18 @@ export class Agentia {
     const template = this.cfg.commands[key]
     if (!template) throw new Error(`No command template "${key}" in config`)
     const args = fillTemplate(template, { pipelineId: this.cfg.pipelineId, ...values })
-    return runJson(this.bin, args, { cwd: (this.cfg as any).root, ...opts })
+    // Retry transient Copado gateway errors (HTTP 5xx) a few times before giving up.
+    for (let attempt = 1; ; attempt++) {
+      try {
+        return runJson(this.bin, args, { cwd: (this.cfg as any).root, ...opts })
+      } catch (err) {
+        const msg = (err as Error).message
+        if (attempt >= 3 || !/Gateway request failed \(5\d\d\)|statusCode"?\s*:\s*5\d\d|ECONNRESET|ETIMEDOUT/i.test(msg)) throw err
+        const waitMs = attempt * 15_000
+        process.stderr.write(`Copado returned a temporary error; retrying in ${waitMs / 1000}s (attempt ${attempt + 1}/3)\n`)
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, waitMs)
+      }
+    }
   }
 
   // ---------- setup ----------

@@ -50,10 +50,11 @@ export async function commitToStory(
   message: string,
   files: string[],
   deletions: { type: string; name: string }[] = [],
+  extraMembers: { type: string; name: string }[] = [],
 ): Promise<string> {
   const { cfg, agentia, sf, git } = d
   const src = sourceEnv(cfg)
-  const members = membersForFiles(files)
+  const members = [...membersForFiles(files), ...extraMembers.filter((x) => !membersForFiles(files).some((m) => m.type === x.type && m.name === x.name))]
 
   if (cfg.commitMode === 'git') {
     const branch = `${cfg.featureBranchPrefix}${story.name}`
