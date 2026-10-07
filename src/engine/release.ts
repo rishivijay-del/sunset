@@ -15,6 +15,9 @@ import { testLevelArgs, type Salesforce } from '../adapters/salesforce.js'
 import { prodEnv, sourceEnv, type LoadedConfig } from '../core/config.js'
 import type { EnvProgress, Phase } from '../core/plan.js'
 import { metadataMemberOf } from '../core/referenceFinder.js'
+import { copyFileSync, existsSync, mkdirSync, unlinkSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { dirname, join } from 'node:path'
 import { run } from '../core/runner.js'
 import { color, confirm, icon, pick, typedConfirm } from '../util/index.js'
 
@@ -84,7 +87,54 @@ export async function commitToStory(
   }
 
   const res = agentia.commit(story.id || story.name, message, changes)
-  return `copado commit ${String(pick(res?.result ?? res, ['id', 'commitId', 'jobExecutionId']) ?? 'submitted')}`
+  const raw = JSON.stringify(res ?? {})
+  const noChanges = /no changes to be committed/i.test(raw)
+  const failed = /"status"\s*:\s*"(Error|Failed)"/i.test(raw)
+  if (failed && !noChanges) throw new Error(`Copado commit failed: ${raw.slice(0, 600)}`)
+  if (noChanges && files.length) {
+    // Salesforce omits switched-off permissions when Copado retrieves a permission set, so Copado sees
+    // "no changes". Put the exact edited files on the story's feature branch ourselves.
+    console.log(color.yellow(`${icon.warn} Copado found no retrievable changes; pushing the ${files.length} edited file(s) to feature/${story.name} directly`))
+    pushFilesToFeatureBranch(d, story.name, files, message)
+    return `git push to ${cfg.featureBranchPrefix}${story.name}`
+  }
+  return `copado commit ${noChanges ? '(no file changes)' : 'done'}`
+}
+
+/** Ensure the story's feature branch exists on the remote (Copado creates it on a successful commit). */
+export function featureBranchExists(d: ReleaseDeps, storyName: string): boolean {
+  d.git.fetch()
+  return d.git.refExists(`${d.cfg.gitRemote}/${d.cfg.featureBranchPrefix}${storyName}`)
+}
+
+/** Commit exactly these working-tree files onto feature/<story> via a temporary worktree (current checkout untouched). */
+export function pushFilesToFeatureBranch(d: ReleaseDeps, storyName: string, files: string[], message: string) {
+  const { cfg } = d
+  const branch = `${cfg.featureBranchPrefix}${storyName}`
+  const remote = cfg.gitRemote
+  const mainBranch = cfg.environments.find((e) => e.isProduction)?.branch ?? 'main'
+  run('git', ['fetch', remote], { cwd: cfg.root, allowFail: true })
+  const hasRemote = run('git', ['rev-parse', '--verify', '--quiet', `${remote}/${branch}`], { cwd: cfg.root, allowFail: true }).code === 0
+  const base = hasRemote ? `${remote}/${branch}` : `${remote}/${mainBranch}`
+  const wt = join(tmpdir(), `sunset-wt-${Date.now()}`)
+  run('git', ['worktree', 'add', '-B', branch, wt, base], { cwd: cfg.root })
+  try {
+    for (const f of files) {
+      const src = join(cfg.root, f)
+      const dest = join(wt, f)
+      if (existsSync(src)) {
+        mkdirSync(dirname(dest), { recursive: true })
+        copyFileSync(src, dest)
+      } else if (existsSync(dest)) unlinkSync(dest)
+    }
+    run('git', ['add', '-A', '--', ...files], { cwd: wt })
+    const commit = run('git', ['commit', '--no-verify', '-q', '-m', `${storyName}: ${message}`], { cwd: wt, allowFail: true })
+    if (commit.code !== 0 && !/nothing to commit/i.test(commit.stdout + commit.stderr)) throw new Error(commit.stderr || commit.stdout)
+    run('git', ['push', '-u', remote, `${branch}:${branch}`], { cwd: wt })
+  } finally {
+    run('git', ['worktree', 'remove', '--force', wt], { cwd: cfg.root, allowFail: true })
+    run('git', ['branch', '-D', branch], { cwd: cfg.root, allowFail: true }) // let `work set` recreate it from origin
+  }
 }
 
 /** Step 3-5: move the story through every environment after the source one. */

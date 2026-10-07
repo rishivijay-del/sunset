@@ -32,7 +32,7 @@ import type { Investigation } from './investigator.js'
 import { askOracle } from './oracle.js'
 import { inactiveFlowVersions, inactiveFlowVersionsByIds } from './orgReferences.js'
 import { proposeAndApply } from './patcher.js'
-import { commitToStory, promoteThroughPipeline, type ReleaseDeps } from './release.js'
+import { commitToStory, featureBranchExists, promoteThroughPipeline, type ReleaseDeps } from './release.js'
 import { detachEditorFor, isPermissionFile, removeFieldPermission, removeFromReport, setFieldPermission } from './xmlEditors.js'
 
 export interface RunOptions {
@@ -178,6 +178,12 @@ async function shipPhase(d: ReleaseDeps, plan: Plan, p: Phase, files: string[], 
   }
   const story = ensureStory(p)
   const srcProgress = p.environments.find((e) => e.env === sourceEnv(d.cfg).name)
+  // If an earlier run "committed" but Copado created no feature branch, commit again (with the git fallback).
+  const nothingPromotedYet = p.environments.slice(1).every((e) => e.status === 'pending' || e.status === 'failed')
+  if (srcProgress && srcProgress.status !== 'pending' && nothingPromotedYet && files.length && !featureBranchExists(d, story.name)) {
+    console.log(color.yellow(`${icon.warn} feature/${story.name} does not exist yet; committing again`))
+    srcProgress.status = 'pending'
+  }
   if (srcProgress?.status === 'pending') {
     const result = await commitToStory(d, story, message, files, deletions)
     console.log(`${icon.ok} ${result}`)
