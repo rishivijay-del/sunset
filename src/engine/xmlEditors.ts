@@ -97,8 +97,24 @@ export function setFieldPermission(xml: string, object: string, field: string, r
   const indent = /\n([ \t]+)<\w/.exec(xml)?.[1] ?? '    '
   const inner = `${indent}${indent}`
   const entry = `${indent}<fieldPermissions>\n${inner}<editable>${editable}</editable>\n${inner}<field>${qualified}</field>\n${inner}<readable>${readable}</readable>\n${indent}</fieldPermissions>\n`
-  // Salesforce sorts elements alphabetically; inserting before the closing root tag is accepted on deploy.
-  const updated = xml.replace(/(\s*)(<\/(?:PermissionSet|Profile)>\s*)$/, `\n${entry}$2`)
+  // Salesforce requires all <fieldPermissions> to be grouped in alphabetical element order.
+  // 1) After the last existing </fieldPermissions>, or 2) before the first top-level element that sorts after it.
+  const lastClose = xml.lastIndexOf('</fieldPermissions>')
+  let at = -1
+  if (lastClose >= 0) at = xml.indexOf('\n', lastClose) + 1
+  else {
+    const re = new RegExp(`\\n${indent.replace(/\t/g, '\\t')}<([A-Za-z]+)[\\s>/]`, 'g')
+    let m: RegExpExecArray | null
+    while ((m = re.exec(xml))) {
+      if (m[1] > 'fieldPermissions') {
+        at = m.index + 1
+        break
+      }
+    }
+    if (at < 0) at = xml.search(/<\/(?:PermissionSet|Profile)>\s*$/)
+  }
+  if (at <= 0) return { xml, changed: false }
+  const updated = xml.slice(0, at) + entry + xml.slice(at)
   return { xml: updated, changed: updated !== xml }
 }
 

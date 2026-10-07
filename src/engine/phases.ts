@@ -303,7 +303,12 @@ export async function runQuarantine(d: ReleaseDeps, plan: Plan, opts: RunOptions
     for (const f of permissionFiles) {
       preserveOriginal(cfg.stateDir, capsule, cfg.root, f)
       const path = join(cfg.root, f)
-      const res = setFieldPermission(readFileSync(path, 'utf8'), t.object, t.field, false, false)
+      const current = readFileSync(path, 'utf8')
+      // A permission set that never mentions the field grants nothing, so leave it untouched.
+      // Profiles can carry default access, so they always get an explicit "no access" entry.
+      const mentions = new RegExp(`<field>\\s*${t.object}\\.${t.field}\\s*</field>`, 'i').test(current)
+      if (!mentions && f.endsWith('.permissionset-meta.xml')) continue
+      const res = setFieldPermission(current, t.object, t.field, false, false)
       if (res.changed) {
         writeFileSync(path, res.xml)
         changed.add(f)

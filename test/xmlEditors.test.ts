@@ -66,3 +66,16 @@ assert.ok(!/Legacy_Region__c/.test(removed.xml) && /<label>Sales Ops<\/label>/.t
 const other = setFieldPermission(ps.replace('Account.', 'Contact.'), 'Account', 'Legacy_Region__c', false, false)
 assert.ok(/<field>Contact\.Legacy_Region__c<\/field>\s*<readable>true<\/readable>/.test(other.xml))
 console.log('xmlEditors: ok')
+
+// Inserting into a permission set that has no fieldPermissions yet must keep element order (before <label>)
+{
+  const ps2 = `<?xml version="1.0" encoding="UTF-8"?>\n<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">\n    <description>x</description>\n    <hasActivationRequired>false</hasActivationRequired>\n    <label>L</label>\n</PermissionSet>\n`
+  const r2 = setFieldPermission(ps2, 'Account', 'Market_Zone__c', false, false)
+  assert.ok(r2.xml.indexOf('<fieldPermissions>') > r2.xml.indexOf('<description>'))
+  assert.ok(r2.xml.indexOf('<fieldPermissions>') < r2.xml.indexOf('<hasActivationRequired>'))
+  // With existing entries, the new one goes right after the last one (still grouped)
+  const ps3 = `<PermissionSet>\n    <fieldPermissions>\n        <editable>true</editable>\n        <field>Account.A__c</field>\n        <readable>true</readable>\n    </fieldPermissions>\n    <label>L</label>\n</PermissionSet>\n`
+  const r3 = setFieldPermission(ps3, 'Account', 'B__c', false, false)
+  assert.ok(/<\/fieldPermissions>\n    <fieldPermissions>[\s\S]*Account\.B__c[\s\S]*<\/fieldPermissions>\n    <label>/.test(r3.xml), r3.xml)
+  console.log('xmlEditors ordering: ok')
+}
