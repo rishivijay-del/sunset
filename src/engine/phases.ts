@@ -5,6 +5,7 @@
  *   (merge only) migrate → detach → quarantine → archive → retire
  */
 import { existsSync, readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { dirname, join, relative, sep } from 'node:path'
 import type { Agentia, Story } from '../adapters/agentia.js'
 import { prodEnv, sourceEnv, type LoadedConfig } from '../core/config.js'
@@ -374,6 +375,25 @@ export function enforceHidden(d: ReleaseDeps, plan: Plan, p: Phase) {
   savePlan(cfg.stateDir, plan)
 }
 
+/** Deploy and assign a read-only "Sunset_Archivist" permission set to the running user (archive/restore only). */
+export function grantArchivistAccess(d: ReleaseDeps, alias: string, targets: Target[]) {
+  const ns = 'xmlns="http://soap.sforce.com/2006/04/metadata"'
+  const perms = targets
+    .map((t) => `    <fieldPermissions>\n        <editable>false</editable>\n        <field>${t.qualified}</field>\n        <readable>true</readable>\n    </fieldPermissions>\n`)
+    .join('')
+  const dir = join(tmpdir(), `sunset-archivist-${Date.now()}`)
+  ensureDir(join(dir, 'force-app', 'main', 'default', 'permissionsets'))
+  writeFileSync(join(dir, 'sfdx-project.json'), JSON.stringify({ packageDirectories: [{ path: 'force-app', default: true }], sourceApiVersion: d.cfg.apiVersion }))
+  writeFileSync(
+    join(dir, 'force-app', 'main', 'default', 'permissionsets', 'Sunset_Archivist.permissionset-meta.xml'),
+    `<?xml version="1.0" encoding="UTF-8"?>\n<PermissionSet ${ns}>\n    <description>Temporary read-only access for the Sunset backup and restore. Assigned only to the person running Sunset.</description>\n${perms}    <hasActivationRequired>false</hasActivationRequired>\n    <label>Sunset Archivist</label>\n</PermissionSet>\n`,
+  )
+  const dep = run('sf', ['project', 'deploy', 'start', '--source-dir', 'force-app', '-o', alias, '--wait', '20', '--json'], { cwd: dir, allowFail: true })
+  if (dep.code !== 0) throw new Error(`Could not give the backup user read access in ${alias}: ${dep.stdout.slice(0, 300)}`)
+  run('sf', ['org', 'assign', 'permset', '--name', 'Sunset_Archivist', '-o', alias, '--json'], { allowFail: true })
+  console.log(color.dim(`   ${alias}: read-only backup access granted to you only (Sunset_Archivist)`))
+}
+
 /** Watch for anyone who still needs the field. Pure-ish: queries + signal recording. */
 export async function watchQuarantine(d: ReleaseDeps, plan: Plan, opts: { signal?: string; clear?: boolean }) {
   const { cfg, sf } = d
@@ -422,6 +442,9 @@ export async function runArchive(d: ReleaseDeps, plan: Plan, opts: RunOptions & 
   gate(cfg, plan, 'archive', opts)
   begin(plan, p)
   const envs = opts.envs?.length ? cfg.environments.filter((e) => opts.envs!.includes(e.name)) : cfg.environments
+  // Quarantine hides the field from everyone, including the admin running Sunset. Give only the running user
+  // read-only access through a dedicated permission set so the data can be backed up.
+  for (const env of envs) grantArchivistAccess(d, env.sfAlias, plan.targets)
   for (const t of plan.targets) {
     const capsule = capsuleFor(cfg, plan, t)
     for (const env of envs) {
